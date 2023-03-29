@@ -69,47 +69,82 @@ app.post("/GetNewsById", (req, res) => {
 });
 
 app.post("/InsertNews", (req, res) => {
-  let body = req.body;
   let query = "INSERT INTO tbl_news SET ?";
-  dbConn.query(query, body, function (error, results, fields) {
+  dbConn.query(query, req.body, function (error, results, fields) {
     if (error) throw error;
-    res.status(200).json("Success");
+    res.status(200).json(results);
   });
 });
 
 app.post("/InsertRegion", (req, res) => {
-  let body = req.body;
   let query = "INSERT INTO tbl_region SET ?";
-  dbConn.query(query, body, function (error, results, fields) {
+  dbConn.query(query, req.body, function (error, results, fields) {
     if (error) throw error;
-    res.status(200).json("Success");
+    res.status(200).json(results);
   });
 });
 
 app.post("/UpdateNews", (req, res) => {
-  let body = req.body;
   let query = `UPDATE tbl_news SET ? WHERE id = ${req.body.id}`;
-  dbConn.query(query, body, function (error, results, fields) {
+  dbConn.query(query, req.body, function (error, results, fields) {
     if (error) throw error;
-    res.status(200).json("Success");
+    res.status(200).json(results);
   });
 });
 
 app.post("/UpdateNewStatus", (req, res) => {
-  let body = req.body;
-  let query = `UPDATE tbl_news SET status = NOT status WHERE id=${body.id}`;
-  dbConn.query(query, body, function (error, results, fields) {
+  let query = `UPDATE tbl_news SET status = NOT status WHERE id=${req.body.id}`;
+  dbConn.query(query, req.body, function (error, results, fields) {
     if (error) throw error;
-    res.status(200).json("Success");
+    res.status(200).json(results);
   });
 });
 
 app.post("/UpdateView", (req, res) => {
-  let body = req.body;
-  let query = `UPDATE tbl_news SET views = views + 1 WHERE id=${body.id}`;
-  dbConn.query(query, body, function (error, results, fields) {
+  let query = `UPDATE tbl_news SET views = views + 1 WHERE id=${req.body.id}`;
+  dbConn.query(query, req.body, function (error, results, fields) {
     if (error) throw error;
-    res.status(200).json("Success");
+    res.status(200).json(results);
+  });
+});
+
+
+app.post("/InsertComment", (req, res) => {
+  let query = "INSERT INTO tbl_comments SET ?";
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
+  });
+});
+app.post("/InsertComment", (req, res) => {
+  let query = "INSERT INTO tbl_comments SET ?";
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
+  });
+});
+
+app.post("/GetCommentByHostId", (req, res) => {
+  let query = `SELECT * FROM tbl_comments  WHERE tbl_comments.host_id=${req.body.id}`;
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
+  });
+});
+
+app.post("/DeleteNewById", (req, res) => {
+  let query = `DELETE FROM tbl_news WHERE tbl_news.id=${req.body.id}`;
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
+  });
+});
+
+app.post("/DeleteCommentById", (req, res) => {
+  let query = `DELETE FROM tbl_comments WHERE tbl_comments.comment_id=${req.body.comment_id}`;
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
   });
 });
 
