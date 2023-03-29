@@ -196,6 +196,9 @@ app.post("/Login", (req, res) => {
   dbConn.query(query, req.body, function (error, results, fields) {
     if (error) throw error;
     res.status(200).json(results);
+    if (results?.length) {
+      await SetToken(results[0]);
+    }
   });
 });
 
