@@ -21,7 +21,7 @@ var dbConn = mysql.createConnection({
 // connect to database
 dbConn.connect();
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   helmet.contentSecurityPolicy({
     directives: {
       "script-src": ["'self'"],
@@ -34,13 +34,48 @@ app.use((req, res, next) => {
     "GET, OPTIONS, POST, PUT, PATCH, DELETE"
   );
   res.append("Access-Control-Allow-Headers", "*");
-  if (req.method === "OPTIONS") {
-    res.status(200);
-    res.end();
-  } else {
+  // if (req.originalUrl === "/LoginSocial") {
+  if (await CheckToken(req.headers.token, req.originalUrl)) {
     next();
+  } else {
+    res.status(401).json("401 Unauthorized");
+    res.end();
   }
 });
+
+const ListNoToken = ["/Login", "/LoginSocial"];
+
+const CheckToken = async (token, url) => {
+  return new Promise((resolve, reject) => {
+    if (!token && !ListNoToken.find((e) => e.toString() == url.toString())) {
+      resolve(false);
+      return;
+    }
+    if (ListNoToken.find((e) => e.toString() == url.toString())) {
+      resolve(true);
+      return;
+    }
+    let query = `SELECT * FROM tbl_users WHERE tbl_users.token = '${token}'`;
+    dbConn.query(query, function (error, results, fields) {
+      if (error) throw error;
+      resolve(results?.length ? true : false);
+    });
+  });
+};
+
+const SetToken = async (user) => {
+  return new Promise((resolve, reject) => {
+    let token = btoa(JSON.stringify(user));
+    let body = {
+      token: token,
+    };
+    let query = `UPDATE tbl_users SET ? WHERE tbl_users.id = ${user.id}`;
+    dbConn.query(query, body, function (error, results, fields) {
+      if (error) throw error;
+      resolve(true);
+    });
+  });
+};
 
 app.post("/SetAllNewsToActive", (req, res) => {
   let query = `UPDATE tbl_news SET status = 1`;
@@ -158,7 +193,7 @@ app.post("/InsertUser", (req, res) => {
 
 app.post("/Login", (req, res) => {
   req.body.password = btoa(req.body.password);
-  let query = `SELECT username,first_name,last_name,email,image FROM tbl_users WHERE (tbl_users.username = '${req.body.username}' OR tbl_users.email = '${req.body.username}') AND tbl_users.password = '${req.body.password}'`;
+  let query = `SELECT id,username,first_name,last_name,email,image FROM tbl_users WHERE (tbl_users.username = '${req.body.username}' OR tbl_users.email = '${req.body.username}') AND tbl_users.password = '${req.body.password}'`;
   dbConn.query(query, req.body, function (error, results, fields) {
     if (error) throw error;
     res.status(200).json(results);
@@ -174,10 +209,13 @@ app.post("/CheckDuplicateUser", (req, res) => {
 });
 
 app.post("/LoginSocial", (req, res) => {
-  let query = `SELECT username,first_name,last_name,email,image FROM tbl_users WHERE tbl_users.social_id = '${req.body.social_id}'`;
-  dbConn.query(query, req.body, function (error, results, fields) {
+  let query = `SELECT id,username,first_name,last_name,email,image FROM tbl_users WHERE tbl_users.social_id = '${req.body.social_id}'`;
+  dbConn.query(query, req.body, async function (error, results, fields) {
     if (error) throw error;
     res.status(200).json(results);
+    if (results?.length) {
+      await SetToken(results[0]);
+    }
   });
 });
 
