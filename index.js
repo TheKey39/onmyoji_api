@@ -34,7 +34,6 @@ app.use(async (req, res, next) => {
     "GET, OPTIONS, POST, PUT, PATCH, DELETE"
   );
   res.append("Access-Control-Allow-Headers", "*");
-  // if (req.originalUrl === "/LoginSocial") {
   if (await CheckToken(req.headers.token, req.originalUrl)) {
     next();
   } else {
