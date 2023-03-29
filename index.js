@@ -193,7 +193,7 @@ app.post("/InsertUser", (req, res) => {
 app.post("/Login", (req, res) => {
   req.body.password = btoa(req.body.password);
   let query = `SELECT id,username,first_name,last_name,email,image FROM tbl_users WHERE (tbl_users.username = '${req.body.username}' OR tbl_users.email = '${req.body.username}') AND tbl_users.password = '${req.body.password}'`;
-  dbConn.query(query, req.body, function (error, results, fields) {
+  dbConn.query(query, req.body, async function (error, results, fields) {
     if (error) throw error;
     res.status(200).json(results);
     if (results?.length) {
