@@ -108,7 +108,6 @@ app.post("/UpdateView", (req, res) => {
   });
 });
 
-
 app.post("/InsertComment", (req, res) => {
   let query = "INSERT INTO tbl_comments SET ?";
   dbConn.query(query, req.body, function (error, results, fields) {
@@ -147,6 +146,48 @@ app.post("/DeleteCommentById", (req, res) => {
     res.status(200).json(results);
   });
 });
+
+app.post("/InsertUser", (req, res) => {
+  req.body.password = btoa(req.body.password);
+  let query = `INSERT INTO tbl_users SET ?`;
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
+  });
+});
+
+app.post("/Login", (req, res) => {
+  req.body.password = btoa(req.body.password);
+  let query = `SELECT username,first_name,last_name,email,image FROM tbl_users WHERE (tbl_users.username = '${req.body.username}' OR tbl_users.email = '${req.body.username}') AND tbl_users.password = '${req.body.password}'`;
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
+  });
+});
+
+app.post("/CheckDuplicateUser", (req, res) => {
+  let query = `SELECT username,email FROM tbl_users`;
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
+  });
+});
+
+app.post("/LoginSocial", (req, res) => {
+  let query = `SELECT username,first_name,last_name,email,image FROM tbl_users WHERE tbl_users.social_id = '${req.body.social_id}'`;
+  dbConn.query(query, req.body, function (error, results, fields) {
+    if (error) throw error;
+    res.status(200).json(results);
+  });
+});
+
+const btoa = (text) => {
+  return Buffer.from(text, "binary").toString("base64");
+};
+
+const atob = (text) => {
+  return Buffer.from(text, "base64").toString();
+};
 
 app.post("/fileupload", function (req, res) {
   var form = new formidable.IncomingForm();
