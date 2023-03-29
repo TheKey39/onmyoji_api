@@ -149,13 +149,6 @@ app.post("/InsertComment", (req, res) => {
     res.status(200).json(results);
   });
 });
-app.post("/InsertComment", (req, res) => {
-  let query = "INSERT INTO tbl_comments SET ?";
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
-});
 
 app.post("/GetCommentByHostId", (req, res) => {
   let query = `SELECT * FROM tbl_comments  WHERE tbl_comments.host_id=${req.body.id}`;
