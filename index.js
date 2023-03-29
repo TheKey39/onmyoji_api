@@ -76,111 +76,84 @@ const SetToken = async (user) => {
   });
 };
 
-app.post("/SetAllNewsToActive", (req, res) => {
-  let query = `UPDATE tbl_news SET status = 1`;
-  dbConn.query(query, function (error, results, fields) {
+const Query = async (query, res, body) => {
+  dbConn.query(query, body, function (error, results, fields) {
     if (error) throw error;
     res.status(200).json(results);
   });
+};
+
+app.post("/SetAllNewsToActive", (req, res) => {
+  let query = `UPDATE tbl_news SET status = 1`;
+  Query(query,res);
 });
 
 app.post("/GetAllNews", (req, res) => {
   let limit = req.body.limit;
   let page = req.body.page;
   let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 LIMIT ${limit} OFFSET ${page}`;
-  dbConn.query(query, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res);
 });
 
 app.post("/GetNewsById", (req, res) => {
   let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE (tbl_news.id=${req.body.id} AND tbl_news.status=1)`;
-  dbConn.query(query, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res);
 });
 
 app.post("/InsertNews", (req, res) => {
   let query = "INSERT INTO tbl_news SET ?";
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/InsertRegion", (req, res) => {
   let query = "INSERT INTO tbl_region SET ?";
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/UpdateNews", (req, res) => {
   let query = `UPDATE tbl_news SET ? WHERE id = ${req.body.id}`;
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/UpdateNewStatus", (req, res) => {
   let query = `UPDATE tbl_news SET status = NOT status WHERE id=${req.body.id}`;
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/UpdateView", (req, res) => {
   let query = `UPDATE tbl_news SET views = views + 1 WHERE id=${req.body.id}`;
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/InsertComment", (req, res) => {
   let query = "INSERT INTO tbl_comments SET ?";
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/GetCommentByHostId", (req, res) => {
   let query = `SELECT * FROM tbl_comments  WHERE tbl_comments.host_id=${req.body.id}`;
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/DeleteNewById", (req, res) => {
   let query = `DELETE FROM tbl_news WHERE tbl_news.id=${req.body.id}`;
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/DeleteCommentById", (req, res) => {
   let query = `DELETE FROM tbl_comments WHERE tbl_comments.comment_id=${req.body.comment_id}`;
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
 });
 
 app.post("/InsertUser", (req, res) => {
   req.body.password = btoa(req.body.password);
   let query = `INSERT INTO tbl_users SET ?`;
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
-  });
+  Query(query,res,req.body);
+});
+
+app.post("/CheckDuplicateUser", (req, res) => {
+  let query = `SELECT username,email FROM tbl_users`;
+  Query(query,res,req.body);
 });
 
 app.post("/Login", (req, res) => {
@@ -192,14 +165,6 @@ app.post("/Login", (req, res) => {
     if (results?.length) {
       await SetToken(results[0]);
     }
-  });
-});
-
-app.post("/CheckDuplicateUser", (req, res) => {
-  let query = `SELECT username,email FROM tbl_users`;
-  dbConn.query(query, req.body, function (error, results, fields) {
-    if (error) throw error;
-    res.status(200).json(results);
   });
 });
 
