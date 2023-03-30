@@ -42,7 +42,7 @@ app.use(async (req, res, next) => {
   }
 });
 
-const ListNoToken = ["/Login", "/LoginSocial"];
+const ListNoToken = ["/Login", "/LoginSocial", "/InsertUser", "/CheckDuplicateUser"];
 
 const CheckToken = async (token, url) => {
   return new Promise((resolve, reject) => {
