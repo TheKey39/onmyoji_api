@@ -4,7 +4,7 @@ const express = require('express')
 const app = express()
 //สร้างตัวแปร PORT ขึ้นมารับค่า port ในกรณีที่เราได้กำหนดไว้ใน environment ของเครื่อง
 //แต่ถ้าไม่ได้กำหนดไว้ เราจะใช้ค่า 8080 แทน
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 80
 //สร้าง route ขึ้นมา 1 ตัว โดยกำหนดให้ path คือ / หรือ index ของ host นั่นเอง
 //จากนั้นให้กำหนด response แสดงคำว่า Hello World
 app.get('/', (req, res) => res.send('Hello World'))
