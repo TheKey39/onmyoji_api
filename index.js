@@ -34,7 +34,7 @@ app.use(async (req, res, next) => {
     "GET, OPTIONS, POST, PUT, PATCH, DELETE"
   );
   res.append("Access-Control-Allow-Headers", "*");
-  if (await CheckToken(req.headers.token, req.originalUrl)) {
+  if (await CheckToken(req.body.token, req.originalUrl)) {
     next();
   } else {
     res.status(401).json("401 Unauthorized");
