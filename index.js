@@ -8,8 +8,8 @@ const cors = require("cors");
 var fs = require("fs");
 const helmet = require("helmet");
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({ extended: true }));
 
 // connection configurations
 var dbConn = mysql.createConnection({
@@ -21,35 +21,44 @@ var dbConn = mysql.createConnection({
 // connect to database
 dbConn.connect();
 
-app.use(async (req, res, next) => {
-  helmet.contentSecurityPolicy({
-    directives: {
-      "script-src": ["'self'"],
-      upgradeInsecureRequests: null,
-    },
-  });
-  res.append("Access-Control-Allow-Origin", "*");
-  res.append(
-    "Access-Control-Allow-Methods",
-    "GET, OPTIONS, POST, PUT, PATCH, DELETE"
-  );
-  res.append("Access-Control-Allow-Headers", "*");
-  if (await CheckToken(req.body.token, req.originalUrl)) {
-    next();
-  } else {
-    res.status(401).json("401 Unauthorized");
-    res.end();
+app.use(
+  bodyParser.urlencoded({ extended: true }),
+  bodyParser.json(),
+  async (req, res, next) => {
+    helmet.contentSecurityPolicy({
+      directives: {
+        "script-src": ["'self'"],
+        upgradeInsecureRequests: null,
+      },
+    });
+    res.append("Access-Control-Allow-Origin", "*");
+    res.append(
+      "Access-Control-Allow-Methods",
+      "GET, OPTIONS, POST, PUT, PATCH, DELETE"
+    );
+    res.append("Access-Control-Allow-Headers", "*");
+    if (await CheckToken(req.query.token, req._parsedUrl.pathname)) {
+      next();
+    } else {
+      res.status(401).json("401 Unauthorized");
+      res.end();
+    }
   }
-});
+);
 
-const ListNoToken = ["/Login", "/LoginSocial", "/InsertUser", "/CheckDuplicateUser"];
+const ListNoToken = [
+  "/Login",
+  "/LoginSocial",
+  "/InsertUser",
+  "/CheckDuplicateUser",
+  "/GetAllNews",
+  "/GetNewsById",
+  "/GetCommentByHostId"
+];
 
 const CheckToken = async (token, url) => {
   return new Promise((resolve, reject) => {
-    if (!token && !ListNoToken.find((e) => e.toString() == url.toString())) {
-      resolve(false);
-      return;
-    }
+
     if (ListNoToken.find((e) => e.toString() == url.toString())) {
       resolve(true);
       return;
@@ -79,81 +88,89 @@ const SetToken = async (user) => {
 const Query = async (query, res, body) => {
   dbConn.query(query, body, function (error, results, fields) {
     if (error) throw error;
+    results?.length && results[0]?.password ? delete results[0]?.password : null;
     res.status(200).json(results);
   });
 };
 
 app.post("/SetAllNewsToActive", (req, res) => {
   let query = `UPDATE tbl_news SET status = 1`;
-  Query(query,res);
+  Query(query, res);
 });
 
 app.post("/GetAllNews", (req, res) => {
   let limit = req.body.limit;
   let page = req.body.page;
-  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 LIMIT ${limit} OFFSET ${page}`;
-  Query(query,res);
+  let region_id = req.body?.region_id || null;
+  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 ORDER BY tbl_news.views, tbl_news.region_id ASC `;
+  if (region_id) {
+    query += `AND tbl_news.region_id = ${region_id} `
+  }
+
+  query += `LIMIT ${limit} OFFSET ${page}`
+  
+  Query(query, res);
 });
 
 app.post("/GetNewsById", (req, res) => {
-  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE (tbl_news.id=${req.body.id} AND tbl_news.status=1)`;
-  Query(query,res);
+  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) INNER JOIN tbl_users ON (tbl_news.created_by = tbl_users.id) WHERE (tbl_news.id=${req.body.id} AND tbl_news.status=1)`;
+  Query(query, res);
 });
 
 app.post("/InsertNews", (req, res) => {
   let query = "INSERT INTO tbl_news SET ?";
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/InsertRegion", (req, res) => {
   let query = "INSERT INTO tbl_region SET ?";
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/UpdateNews", (req, res) => {
   let query = `UPDATE tbl_news SET ? WHERE id = ${req.body.id}`;
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/UpdateNewStatus", (req, res) => {
   let query = `UPDATE tbl_news SET status = NOT status WHERE id=${req.body.id}`;
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/UpdateView", (req, res) => {
   let query = `UPDATE tbl_news SET views = views + 1 WHERE id=${req.body.id}`;
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/InsertComment", (req, res) => {
   let query = "INSERT INTO tbl_comments SET ?";
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/GetCommentByHostId", (req, res) => {
   let query = `SELECT * FROM tbl_comments  WHERE tbl_comments.host_id=${req.body.id}`;
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/DeleteNewById", (req, res) => {
   let query = `DELETE FROM tbl_news WHERE tbl_news.id=${req.body.id}`;
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/DeleteCommentById", (req, res) => {
   let query = `DELETE FROM tbl_comments WHERE tbl_comments.comment_id=${req.body.comment_id}`;
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/InsertUser", (req, res) => {
   req.body.password = btoa(req.body.password);
   let query = `INSERT INTO tbl_users SET ?`;
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/CheckDuplicateUser", (req, res) => {
   let query = `SELECT username,email FROM tbl_users`;
-  Query(query,res,req.body);
+  Query(query, res, req.body);
 });
 
 app.post("/Login", (req, res) => {
