@@ -103,10 +103,14 @@ app.post("/GetAllNews", async (req, res) => {
   let limit = req.body.limit;
   let page = req.body.page;
   let region_id = req.body?.region_id || null;
-  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `;
+  let search = req.body?.search
+  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 AND (tbl_news.title LIKE '%${search}%' OR tbl_news.detail LIKE '%${search}%') ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `;
   if (region_id) {
     query += `AND tbl_news.region_id = ${region_id} `;
   }
+  // if (search) {
+  //   query += `WHERE tbl_news.title '%${search}%'  `;
+  // }
 
   query += `LIMIT ${limit} OFFSET ${page}`;
 
