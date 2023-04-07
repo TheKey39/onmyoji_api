@@ -53,12 +53,11 @@ const ListNoToken = [
   "/CheckDuplicateUser",
   "/GetAllNews",
   "/GetNewsById",
-  "/GetCommentByHostId"
+  "/GetCommentByHostId",
 ];
 
 const CheckToken = async (token, url) => {
   return new Promise((resolve, reject) => {
-
     if (ListNoToken.find((e) => e.toString() == url.toString())) {
       resolve(true);
       return;
@@ -80,120 +79,158 @@ const SetToken = async (user) => {
     let query = `UPDATE tbl_users SET ? WHERE tbl_users.id = ${user.id}`;
     dbConn.query(query, body, function (error, results, fields) {
       if (error) throw error;
-      resolve(true);
+      resolve(body);
     });
   });
 };
 
 const Query = async (query, res, body) => {
-  dbConn.query(query, body, function (error, results, fields) {
-    if (error) throw error;
-    results?.length && results[0]?.password ? delete results[0]?.password : null;
-    res.status(200).json(results);
+  return new Promise((resolve, reject) => {
+    dbConn.query(query, body, function (error, results, fields) {
+      if (error) resolve(res.status(400).json(error));
+
+      resolve(results);
+    });
   });
 };
 
-app.post("/SetAllNewsToActive", (req, res) => {
+app.post("/SetAllNewsToActive", async (req, res) => {
   let query = `UPDATE tbl_news SET status = 1`;
-  Query(query, res);
+  let results = await Query(query, res);
 });
 
-app.post("/GetAllNews", (req, res) => {
+app.post("/GetAllNews", async (req, res) => {
   let limit = req.body.limit;
   let page = req.body.page;
   let region_id = req.body?.region_id || null;
-  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 ORDER BY tbl_news.views, tbl_news.region_id ASC `;
+  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `;
   if (region_id) {
-    query += `AND tbl_news.region_id = ${region_id} `
+    query += `AND tbl_news.region_id = ${region_id} `;
   }
 
-  query += `LIMIT ${limit} OFFSET ${page}`
-  
-  Query(query, res);
+  query += `LIMIT ${limit} OFFSET ${page}`;
+
+  let results = await Query(query, res);
+  res.status(200).json(results);
 });
 
-app.post("/GetNewsById", (req, res) => {
+app.post("/GetNewsById", async (req, res) => {
   let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) INNER JOIN tbl_users ON (tbl_news.created_by = tbl_users.id) WHERE (tbl_news.id=${req.body.id} AND tbl_news.status=1)`;
-  Query(query, res);
+  let results = await Query(query, res);
+  results?.length && results[0]?.password ? delete results[0]?.password : null;
+  results?.length && results[0]?.token ? delete results[0]?.token : null;
+  results?.length && results[0]?.id ? delete results[0]?.id : null;
+  results?.length && results[0]?.email ? delete results[0]?.email : null;
+  results?.length && results[0]?.first_name
+    ? delete results[0]?.first_name
+    : null;
+  results?.length && results[0]?.last_name
+    ? delete results[0]?.last_name
+    : null;
+  results?.length && results[0]?.social_id
+    ? delete results[0]?.social_id
+    : null;
+  res.status(200).json(results);
 });
 
-app.post("/InsertNews", (req, res) => {
+app.post("/InsertNews", async (req, res) => {
   let query = "INSERT INTO tbl_news SET ?";
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/InsertRegion", (req, res) => {
+app.post("/InsertRegion", async (req, res) => {
   let query = "INSERT INTO tbl_region SET ?";
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/UpdateNews", (req, res) => {
+app.post("/UpdateNews", async (req, res) => {
   let query = `UPDATE tbl_news SET ? WHERE id = ${req.body.id}`;
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/UpdateNewStatus", (req, res) => {
+app.post("/UpdateNewStatus", async (req, res) => {
   let query = `UPDATE tbl_news SET status = NOT status WHERE id=${req.body.id}`;
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/UpdateView", (req, res) => {
+app.post("/UpdateView", async (req, res) => {
   let query = `UPDATE tbl_news SET views = views + 1 WHERE id=${req.body.id}`;
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/InsertComment", (req, res) => {
+app.post("/InsertComment", async (req, res) => {
   let query = "INSERT INTO tbl_comments SET ?";
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/GetCommentByHostId", (req, res) => {
-  let query = `SELECT * FROM tbl_comments  WHERE tbl_comments.host_id=${req.body.id}`;
-  Query(query, res, req.body);
+app.post("/GetCommentByHostId", async (req, res) => {
+  let query = `SELECT * FROM tbl_comments INNER JOIN tbl_users ON (tbl_users.id = tbl_comments.comment_by) WHERE tbl_comments.host_id=${req.body.id}`;
+  let results = await Query(query, res, req.body);
+  for (let i of results) {
+    i.password ? delete i.password : null;
+    i.token ? delete i.token : null;
+    i.id ? delete i.id : null;
+    i.email ? delete i.email : null;
+    i.first_name ? delete i.first_name : null;
+    i.last_name ? delete i.last_name : null;
+    i.social_id ? delete i.social_id : null;
+  }
+
+  res.status(200).json(results);
 });
 
-app.post("/DeleteNewById", (req, res) => {
+app.post("/DeleteNewById", async (req, res) => {
   let query = `DELETE FROM tbl_news WHERE tbl_news.id=${req.body.id}`;
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/DeleteCommentById", (req, res) => {
+app.post("/DeleteCommentById", async (req, res) => {
   let query = `DELETE FROM tbl_comments WHERE tbl_comments.comment_id=${req.body.comment_id}`;
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/InsertUser", (req, res) => {
+app.post("/InsertUser", async (req, res) => {
   req.body.password = btoa(req.body.password);
   let query = `INSERT INTO tbl_users SET ?`;
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/CheckDuplicateUser", (req, res) => {
+app.post("/CheckDuplicateUser", async (req, res) => {
   let query = `SELECT username,email FROM tbl_users`;
-  Query(query, res, req.body);
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
 });
 
-app.post("/Login", (req, res) => {
+app.post("/Login", async (req, res) => {
   req.body.password = btoa(req.body.password);
-  let query = `SELECT id,username,first_name,last_name,email,image FROM tbl_users WHERE (tbl_users.username = '${req.body.username}' OR tbl_users.email = '${req.body.username}') AND tbl_users.password = '${req.body.password}'`;
-  dbConn.query(query, req.body, async function (error, results, fields) {
-    if (error) throw error;
+  let query = `SELECT id,username,first_name,last_name,email FROM tbl_users WHERE (tbl_users.username = '${req.body.username}' OR tbl_users.email = '${req.body.username}') AND tbl_users.password = '${req.body.password}'`;
+  let results = await Query(query, res, req.body);
+
+  if (results?.length) {
+    let token = await SetToken(results[0]);
+    results[0].token = token;
     res.status(200).json(results);
-    if (results?.length) {
-      await SetToken(results[0]);
-    }
-  });
+  }
 });
 
-app.post("/LoginSocial", (req, res) => {
-  let query = `SELECT id,username,first_name,last_name,email,image FROM tbl_users WHERE tbl_users.social_id = '${req.body.social_id}'`;
-  dbConn.query(query, req.body, async function (error, results, fields) {
-    if (error) throw error;
+app.post("/LoginSocial", async (req, res) => {
+  let query = `SELECT id,username,first_name,last_name,email FROM tbl_users WHERE tbl_users.social_id = '${req.body.social_id}'`;
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
+  if (results?.length) {
+    let token = await SetToken(results[0]);
+    results[0].token = token;
     res.status(200).json(results);
-    if (results?.length) {
-      await SetToken(results[0]);
-    }
-  });
+  }
 });
 
 const btoa = (text) => {
@@ -204,7 +241,7 @@ const atob = (text) => {
   return Buffer.from(text, "base64").toString();
 };
 
-app.post("/fileupload", function (req, res) {
+app.post("/fileupload", function async(req, res) {
   var form = new formidable.IncomingForm();
   form.parse(req, function (err, fields, files) {
     var oldpath = files.file.filepath;
