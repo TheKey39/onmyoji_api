@@ -54,6 +54,8 @@ const ListNoToken = [
   "/GetAllNews",
   "/GetNewsById",
   "/GetCommentByHostId",
+  "/CountNews",
+  "/GetRegion"
 ];
 
 const CheckToken = async (token, url) => {
@@ -104,15 +106,28 @@ app.post("/GetAllNews", async (req, res) => {
   let page = req.body.page;
   let region_id = req.body?.region_id || null;
   let search = req.body?.search
-  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 AND (tbl_news.title LIKE '%${search}%' OR tbl_news.detail LIKE '%${search}%') ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `;
+  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 AND (tbl_news.title LIKE '%${search}%' OR tbl_news.detail LIKE '%${search}%') `;
   if (region_id) {
     query += `AND tbl_news.region_id = ${region_id} `;
   }
-  // if (search) {
-  //   query += `WHERE tbl_news.title '%${search}%'  `;
-  // }
 
+  query += `ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `
+  
   query += `LIMIT ${limit} OFFSET ${page}`;
+
+  let results = await Query(query, res);
+  res.status(200).json(results);
+});
+
+app.post("/CountNews", async (req, res) => {
+  let region_id = req.body?.region_id || null;
+  let search = req.body?.search
+  let query = `SELECT COUNT(id) AS News FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 AND (tbl_news.title LIKE '%${search}%' OR tbl_news.detail LIKE '%${search}%') `;
+  if (region_id) {
+    query += `AND tbl_news.region_id = ${region_id} `;
+  }
+
+  query += `ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `
 
   let results = await Query(query, res);
   res.status(200).json(results);
@@ -145,6 +160,12 @@ app.post("/InsertNews", async (req, res) => {
 
 app.post("/InsertRegion", async (req, res) => {
   let query = "INSERT INTO tbl_region SET ?";
+  let results = await Query(query, res, req.body);
+  res.status(200).json(results);
+});
+
+app.post("/GetRegion", async (req, res) => {
+  let query = `SELECT * FROM tbl_region`;
   let results = await Query(query, res, req.body);
   res.status(200).json(results);
 });
@@ -223,6 +244,8 @@ app.post("/Login", async (req, res) => {
     let token = await SetToken(results[0]);
     results[0].token = token;
     res.status(200).json(results);
+  } else {
+    res.status(401).json(results);
   }
 });
 
@@ -234,6 +257,8 @@ app.post("/LoginSocial", async (req, res) => {
     let token = await SetToken(results[0]);
     results[0].token = token;
     res.status(200).json(results);
+  } else {
+    res.status(401).json(results);
   }
 });
 
