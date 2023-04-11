@@ -7,7 +7,17 @@ var mysql = require("mysql");
 const cors = require("cors");
 var fs = require("fs");
 const helmet = require("helmet");
+const multer = require('multer')
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './uploads/.')
+    },
+    filename: (req, file, cb) => {
+        cb(null, 'file-' + Date.now() + '.' +
+        file.originalname.split('.')[file.originalname.split('.').length-1])}
+})
 
+const upload = multer({ storage: storage })
 // app.use(bodyParser.json());
 // app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -56,6 +66,7 @@ const ListNoToken = [
   "/GetCommentByHostId",
   "/CountNews",
   "/GetRegion",
+  "/fileupload",
 ];
 
 const CheckToken = async (token, url) => {
@@ -270,17 +281,10 @@ const atob = (text) => {
   return Buffer.from(text, "base64").toString();
 };
 
-app.post("/fileupload", function async(req, res) {
-  var form = new formidable.IncomingForm();
-  form.parse(req, function (err, fields, files) {
-    var oldpath = files.file.filepath;
-    var newpath =
-      "C:/Work/aot-news/src/assets/image/" + files.file.originalFilename;
-    fs.rename(oldpath, newpath, function (err) {
-      if (err) throw err;
-      res.status(200).json("./assets/image/" + files.file.originalFilename);
-    });
-  });
+app.post("/fileupload", upload.single("fileupload"), function async(req, res) {
+  console.log(req.body);
+  console.log(req.file);
+  res.json({ message: __dirname + '\\' + req.file.path });
 });
 
 app.listen(PORT, () => {
