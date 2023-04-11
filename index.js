@@ -22,8 +22,8 @@ var dbConn = mysql.createConnection({
 dbConn.connect();
 
 app.use(
-  bodyParser.urlencoded({ extended: true }),
-  bodyParser.json(),
+  bodyParser.json({ limit: "50mb" }),
+  bodyParser.urlencoded({ limit: "50mb", extended: true }),
   async (req, res, next) => {
     helmet.contentSecurityPolicy({
       directives: {
@@ -55,7 +55,7 @@ const ListNoToken = [
   "/GetNewsById",
   "/GetCommentByHostId",
   "/CountNews",
-  "/GetRegion"
+  "/GetRegion",
 ];
 
 const CheckToken = async (token, url) => {
@@ -105,14 +105,14 @@ app.post("/GetAllNews", async (req, res) => {
   let limit = req.body.limit;
   let page = req.body.page;
   let region_id = req.body?.region_id || null;
-  let search = req.body?.search
-  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 AND (tbl_news.title LIKE '%${search}%' OR tbl_news.detail LIKE '%${search}%') `;
+  let search = req.body?.search;
+  let query = `SELECT * FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 AND (tbl_news.title LIKE '%${search}%' OR tbl_news.detail LIKE '%${search}%' OR tbl_news.info LIKE '%${search}%') `;
   if (region_id) {
     query += `AND tbl_news.region_id = ${region_id} `;
   }
 
-  query += `ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `
-  
+  query += `ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `;
+
   query += `LIMIT ${limit} OFFSET ${page}`;
 
   let results = await Query(query, res);
@@ -121,13 +121,13 @@ app.post("/GetAllNews", async (req, res) => {
 
 app.post("/CountNews", async (req, res) => {
   let region_id = req.body?.region_id || null;
-  let search = req.body?.search
-  let query = `SELECT COUNT(id) AS News FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 AND (tbl_news.title LIKE '%${search}%' OR tbl_news.detail LIKE '%${search}%') `;
+  let search = req.body?.search;
+  let query = `SELECT COUNT(id) AS News FROM tbl_news INNER JOIN tbl_region ON (tbl_news.region_id = tbl_region.region_id) WHERE tbl_news.status=1 AND (tbl_news.title LIKE '%${search}%' OR tbl_news.detail LIKE '%${search}%' OR tbl_news.info LIKE '%${search}%') `;
   if (region_id) {
     query += `AND tbl_news.region_id = ${region_id} `;
   }
 
-  query += `ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `
+  query += `ORDER BY tbl_news.views DESC, tbl_news.region_id ASC `;
 
   let results = await Query(query, res);
   res.status(200).json(results);
@@ -195,7 +195,7 @@ app.post("/InsertComment", async (req, res) => {
 });
 
 app.post("/GetCommentByHostId", async (req, res) => {
-  let query = `SELECT * FROM tbl_comments INNER JOIN tbl_users ON (tbl_users.id = tbl_comments.comment_by) WHERE tbl_comments.host_id=${req.body.id}`;
+  let query = `SELECT * FROM tbl_comments INNER JOIN tbl_users ON (tbl_users.id = tbl_comments.comment_by) WHERE tbl_comments.host_id=${req.body.id} ORDER BY tbl_comments.comment_id DESC`;
   let results = await Query(query, res, req.body);
   for (let i of results) {
     i.password ? delete i.password : null;
