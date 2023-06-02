@@ -66,12 +66,12 @@ const ListNoToken = [
   "/GetCommentByHostId",
   "/CountNews",
   "/GetRegion",
-  "/fileupload",
+  "/fileupload"
 ];
 
 const CheckToken = async (token, url) => {
   return new Promise((resolve, reject) => {
-    if (ListNoToken.find((e) => e.toString() == url.toString())) {
+    if (ListNoToken.find((e) => e.toString() == url.toString()) || url.toString().search("getfile") != -1) {
       resolve(true);
       return;
     }
@@ -284,7 +284,12 @@ const atob = (text) => {
 app.post("/fileupload", upload.single("fileupload"), function async(req, res) {
   console.log(req.body);
   console.log(req.file);
-  res.json({ message: __dirname + '\\' + req.file.path });
+  res.json({ message: __dirname + '/' + req.file.path });
+});
+
+app.get("/getfile/:name", async (req, res) => {
+  console.log(`${__dirname}/uploads/${req.params.name}`)
+  res.download(`${__dirname}/uploads/${req.params.name}`);
 });
 
 app.listen(PORT, () => {
