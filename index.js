@@ -23,10 +23,7 @@ const upload = multer({ storage: storage })
 
 // connection configurations
 var dbConn = mysql.createConnection({
-  host: "103.76.183.192",
-  user: "project",
-  password: "Admin2016!",
-  database: "Onmyoji News",
+    {{censor}}
 });
 // connect to database
 dbConn.connect();
